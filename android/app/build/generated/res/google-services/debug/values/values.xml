@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">120240812673-3k44595ode3slq6idc3uq1qc7rf998ss.apps.googleusercontent.com</string>
+    <string name="firebase_database_url" translatable="false">https://newkdugo-default-rtdb.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">120240812673</string>
+    <string name="google_api_key" translatable="false">AIzaSyCMdK9oyRQzUHhJSYaxZ971Ne0LKxTYzBI</string>
+    <string name="google_app_id" translatable="false">1:120240812673:android:ca7d870697b3f14109d380</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCMdK9oyRQzUHhJSYaxZ971Ne0LKxTYzBI</string>
+    <string name="google_storage_bucket" translatable="false">newkdugo.appspot.com</string>
+    <string name="project_id" translatable="false">newkdugo</string>
+</resources>
