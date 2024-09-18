@@ -1,151 +1,312 @@
-import React, { useState, useEffect } from 'react';
-import { View, Image, FlatList, TouchableOpacity, Alert, StyleSheet, Text } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { doc, getDocs, collection } from 'firebase/firestore';
-import { db } from '../../../firebase';
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  Text,
+  SafeAreaView,
+} from 'react-native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {getDocs, collection, query, where, Timestamp} from 'firebase/firestore';
+import {db} from '../../../firebase';
+import {Icon} from 'react-native-elements';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-// Function to initialize seat states
-const initializeSeats = (count) =>
-  Array.from({ length: count }, (_, index) => ({
+const initializeSeats = (count, userRole) =>
+  Array.from({length: count}, (_, index) => ({
     seatId: index + 1,
     seatNumber: index + 1,
     empty: true,
     selected: false,
+    locked: userRole === 'lecturer' ? index >= 20 : index < 20,
   }));
 
 const BookSeats = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const [seats, setSeats] = useState(initializeSeats(55));
+  const [seats, setSeats] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState('');
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Fetch seat data from Firebase
-  const fetchSeatData = async () => {
+  const fetchUserRole = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'reservations'));
-      const updatedSeats = seats.map((seat) => {
-        const docSnapshot = querySnapshot.docs.find((doc) => doc.id === seat.seatId.toString());
-        if (docSnapshot) {
-          const seatData = docSnapshot.data();
-          return {
-            ...seat,
-            empty: !seatData.seat_state, // Update seat's empty state based on Firebase data
-          };
+      const role = await AsyncStorage.getItem('userRole');
+      setUserRole(role || '');
+      return role;
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      return '';
+    }
+  };
+
+  const fetchSeatData = async () => {
+    setIsLoading(true);
+    try {
+      const role = await fetchUserRole();
+      const initialSeats = initializeSeats(45, role);
+
+      // Convert the JavaScript Date object to a Firestore Timestamp
+      const selectedDate = Timestamp.fromDate(date);
+      console.log('Selected date as Firestore Timestamp:', selectedDate);
+
+      // Create a query to fetch reservations for the selected date
+      const reservationsQuery = query(
+        collection(db, 'reservations'),
+        where('travelDate', '==', selectedDate),
+      );
+      const querySnapshot = await getDocs(reservationsQuery);
+
+      const reservations = querySnapshot.docs.map(doc => doc.data());
+      console.log('Fetched reservations:', reservations);
+
+      // Update seats based on reservation data
+      const updatedSeats = initialSeats.map(seat => {
+        const reservation = reservations.find(
+          res => res.seatId === seat.seatId,
+        );
+        if (reservation) {
+          console.log(
+            `Updating seat ${seat.seatId} with reservation data:`,
+            reservation,
+          );
         }
-        return seat;
+        return reservation
+          ? {...seat, empty: !reservation.seat_state} // Update seat state
+          : seat; // If no reservation, keep seat as it is
       });
+
+      console.log('Updated seats:', updatedSeats);
       setSeats(updatedSeats);
     } catch (error) {
       console.error('Error fetching seat data:', error);
+      Alert.alert('Error', 'Failed to load seat data. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Fetch seat data on component mount or when refreshSeats is passed in route params
     fetchSeatData();
+  }, [date, route.params?.refreshSeats]);
 
-    // Check if `refreshSeats` is passed, if so, refresh seat data
-    if (route.params?.refreshSeats) {
-      fetchSeatData();
-    }
-  }, [route.params?.refreshSeats]);
-
-  // Function to handle seat selection and navigate to BookRegistration
-  const onSelectSeat = (seat) => {
-    if (!seat.empty) {
-      Alert.alert('This seat is already booked');
+  const onSelectSeat = seat => {
+    if (seat.locked) {
+      Alert.alert(
+        'Seat Unavailable',
+        'This seat is not available for your role.',
+      );
       return;
     }
-
-    navigation.navigate('BookRegistration', { seatNumber: seat.seatNumber, seatId: seat.seatId });
+    if (!seat.empty) {
+      Alert.alert('Seat Unavailable', 'This seat is already booked.');
+      return;
+    }
+    navigation.navigate('BookRegistration', {
+      seatNumber: seat.seatNumber,
+      seatId: seat.seatId,
+      date: date,
+    });
   };
 
-  // Render individual seat
-  const renderSeat = ({ item }) => (
+  const renderSeat = ({item}) => (
     <TouchableOpacity
       style={styles.seatContainer}
       onPress={() => onSelectSeat(item)}
-      disabled={!item.empty}
-    >
-      <View style={styles.seatWrapper}>
-        <Image
-          source={require('../../../assets/imgs/car.png')}
-          style={[
-            styles.seatImage,
-            item.empty ? styles.emptySeat : styles.bookedSeat,
-          ]}
+      disabled={!item.empty || item.locked}>
+      <View
+        style={[
+          styles.seat,
+          !item.empty && styles.bookedSeat,
+          item.locked && styles.lockedSeat,
+        ]}>
+        <Icon
+          name={item.empty ? 'event-seat' : 'event-seat'}
+          type="material"
+          size={24}
+          color={item.locked ? '#9E9E9E' : item.empty ? '#4CAF50' : '#FF5252'}
         />
         <Text style={styles.seatNumber}>{item.seatNumber}</Text>
       </View>
     </TouchableOpacity>
   );
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.seatGrid}>
-        <FlatList
-          data={seats}
-          renderItem={renderSeat}
-          keyExtractor={(item) => item.seatId.toString()}
-          numColumns={5}
-          columnWrapperStyle={styles.columnWrapper}
-        />
+  const SeatLegend = () => (
+    <View style={styles.legend}>
+      <View style={styles.legendItem}>
+        <Icon name="event-seat" type="material" size={24} color="#4CAF50" />
+        <Text style={styles.legendText}>Available</Text>
       </View>
-      <Image
-        source={require('../../../assets/imgs/bus.png.jpg')}
-        style={styles.busImage}
-      />
+      <View style={styles.legendItem}>
+        <Icon name="event-seat" type="material" size={24} color="#FF5252" />
+        <Text style={styles.legendText}>Booked</Text>
+      </View>
+      <View style={styles.legendItem}>
+        <Icon name="event-seat" type="material" size={24} color="#9E9E9E" />
+        <Text style={styles.legendText}>Locked</Text>
+      </View>
     </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Icon name="bus" type="font-awesome" size={30} color="#3498db" />
+        <Text style={styles.headerText}>Select Your Seat</Text>
+      </View>
+
+      <TouchableOpacity
+        style={styles.dateButton}
+        onPress={() => setShowDatePicker(true)}>
+        <Text style={styles.dateButtonText}>
+          Select Date: {date.toDateString()}
+        </Text>
+      </TouchableOpacity>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) {
+              const dayOfWeek = selectedDate.getDay();
+              if (dayOfWeek !== 2 && dayOfWeek !== 6) {
+                Alert.alert(
+                  'Invalid Date',
+                  'Please select a Tuesday or Saturday.',
+                );
+              } else {
+                setDate(selectedDate);
+              }
+            }
+          }}
+        />
+      )}
+
+      <SeatLegend />
+
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <Text>Loading seats...</Text>
+        </View>
+      ) : (
+        <View style={styles.seatGrid}>
+          <FlatList
+            data={seats}
+            renderItem={renderSeat}
+            keyExtractor={item => item.seatId.toString()}
+            numColumns={5}
+            columnWrapperStyle={styles.columnWrapper}
+          />
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.refreshButton} onPress={fetchSeatData}>
+        <Icon name="refresh" type="material" size={24} color="#fff" />
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
+    elevation: 2,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 10,
+    color: '#333',
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 10,
+    backgroundColor: '#fff',
+    marginBottom: 10,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  legendText: {
+    marginLeft: 5,
+    fontSize: 14,
+    color: '#333',
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   seatGrid: {
-    width: '70%',
-    height: '70%',
-    borderWidth: 1,
-    borderRadius: 5,
-    borderColor: '#8e8e8e',
+    flex: 1,
     padding: 10,
   },
   seatContainer: {
     margin: 5,
     alignItems: 'center',
   },
-  seatWrapper: {
+  seat: {
     alignItems: 'center',
-  },
-  seatImage: {
-    width: 24,
-    height: 24,
-  },
-  seatNumber: {
-    marginTop: 2,
-    fontSize: 12,
-    color: '#000',
-  },
-  emptySeat: {
-    tintColor: 'black',
+    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    elevation: 2,
   },
   bookedSeat: {
-    tintColor: '#8e8e8e',
+    backgroundColor: '#ffebee',
+  },
+  seatNumber: {
+    fontSize: 12,
+    color: '#333',
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
   },
-  busImage: {
-    width: 24,
-    height: 24,
-    alignSelf: 'flex-end',
-    margin: 10,
-    opacity: 0.5,
+  refreshButton: {
     position: 'absolute',
     right: 20,
-    top: 20,
+    bottom: 20,
+    backgroundColor: '#ff8c52',
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+  lockedSeat: {
+    backgroundColor: '#E0E0E0',
+  },
+  dateButton: {
+    margin: 10,
+    padding: 10,
+    backgroundColor: '#ff8c52',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  dateButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 

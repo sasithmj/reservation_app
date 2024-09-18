@@ -1,16 +1,22 @@
 // App.js
-import { StyleSheet, Text, View, StatusBar,PermissionsAndroid ,Platform} from 'react-native'
-import React, { useEffect } from 'react'
-import { colors } from './src/global/styles';
+import {
+  StyleSheet,
+  Text,
+  View,
+  StatusBar,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
+import React, {useEffect} from 'react';
+import {colors} from './src/global/styles';
 import RootNavigation from './src/navigation/RootNavigation';
 import PaymentScreen from './src/Components/BookSeats/PaymentScreen';
-import { StripeProvider } from '@stripe/stripe-react-native';
+import {StripeProvider} from '@stripe/stripe-react-native';
 
 // import HomeSearch from './src/Components/HomeSearch/HomeSearch';
 // import DestinationSearch from './src/DestinationSearch/DestinationSearch';
 
 export default function App() {
-
   const androidPermission = async () => {
     try {
       const granted = await PermissionsAndroid.request(
@@ -31,28 +37,25 @@ export default function App() {
     } catch (err) {
       console.warn(err);
     }
-  }
+  };
 
   useEffect(() => {
     if (Platform.OS === 'android') {
       androidPermission();
     }
-  }, [])
+  }, []);
 
   return (
     <View style={styles.container}>
       <StripeProvider publishableKey="pk_test_51PrYcXLTXy6ka4zMB9elONcT6JCmOx76tIIZCQawCyGzxGcUL0fPzHTP1PdWzX9zVtRL6xtXP6Dd2fYDSwWQlQyI00ibROWHY5">
         {/* <PaymentScreen /> */}
       </StripeProvider>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor={colors.StatusBar}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={colors.StatusBar} />
       <RootNavigation />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 }
-})
+  container: {flex: 1},
+});

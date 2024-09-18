@@ -1,143 +1,233 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Alert, KeyboardAvoidingView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { useNavigation } from '@react-navigation/native';
-import { auth } from '../../../firebase';
+import React, {useState, useRef} from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  SafeAreaView,
+  Platform,
+} from 'react-native';
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+import {getDoc, doc} from 'firebase/firestore';
+import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {auth, db} from '../../../firebase';
 
-const Signup = ({ route }) => {
-  const { justRegistered } = route.params || {};
+const Login = ({route}) => {
+  const {justRegistered} = route.params || {};
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
-  const hasMounted = useRef(false);  // To track the initial mount
+  const hasMounted = useRef(false);
 
-  useEffect(() => {
-    // const unsubscribe = auth.onAuthStateChanged(user => {
-    //   if (user && hasMounted.current && !isLoggingIn && !justRegistered) {
-    //     navigation.navigate('HomeScreen');
-    //   }
-    // });
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const userCredentials = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredentials.user;
+      console.log('Logged in with:', user.email);
 
-    return () => {
-      hasMounted.current = false;  // Clean up on component unmount
-      // unsubscribe();
-    };
-  }, [isLoggingIn, justRegistered]);
+      const userDoc = await getDoc(doc(db, 'userdata', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const userRole = userData.role;
+        const userEmail = userData.email;
 
-  useEffect(() => {
-    // Set hasMounted to true after the first render
-    hasMounted.current = true;
-  }, []);
+        await AsyncStorage.setItem('userRole', userRole);
+        await AsyncStorage.setItem('userEmail', userEmail);
+        console.log('User role and email saved:', userRole);
 
-  const handleLogin = () => {
-    setIsLoggingIn(true);
-    signInWithEmailAndPassword(auth, email, password)
-      .then(userCredentials => {
-        const user = userCredentials.user;
-        console.log('Logged in with:', user.email);
         navigation.navigate('HomeScreen');
-      })
-      .catch(error => {
-        setIsLoggingIn(false);
-        Alert.alert('Login Error', error.message);
-      });
+      } else {
+        console.log('No user data found in Firestore');
+        Alert.alert('Error', 'User data not found. Please contact support.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Login Error', error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const forgotPassword = () => {
     if (email) {
+      setIsLoading(true);
       sendPasswordResetEmail(auth, email)
         .then(() => {
-          Alert.alert('Password reset email sent');
+          Alert.alert(
+            'Password Reset',
+            'Password reset email sent successfully.',
+          );
         })
         .catch(error => {
           Alert.alert('Error', error.message);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     } else {
-      Alert.alert('Please enter your email address');
+      Alert.alert(
+        'Email Required',
+        'Please enter your email address to reset your password.',
+      );
     }
   };
 
+  const navigateToRegister = () => {
+    navigation.navigate('Registration'); // Make sure you have a 'Register' screen in your navigation stack
+  };
+
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding">
-      <Text style={styles.title}>Login Page</Text>
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="type the (only) Kdu email"
-          value={email}
-          onChangeText={(text) => setEmail(text)}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Password"
-          value={password}
-          onChangeText={(text) => setPassword(text)}
-          style={styles.input}
-          secureTextEntry
-        />
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={handleLogin} style={[styles.button, styles.buttonOutline]}>
-          <Text style={styles.buttonOutlineText}>Login</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={forgotPassword} style={[styles.button, styles.buttonOutline]}>
-          <Text style={styles.buttonOutlineText}>Forgot Password</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
+        <View style={styles.innerContainer}>
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to continue</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder="Email"
+              placeholderTextColor="#A0A0A0"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              editable={!isLoading}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#A0A0A0"
+              value={password}
+              onChangeText={setPassword}
+              style={styles.input}
+              secureTextEntry
+              editable={!isLoading}
+            />
+          </View>
+          <View style={styles.buttonContainer}>
+            {isLoading ? (
+              <ActivityIndicator size="large" color="#ff8c52" />
+            ) : (
+              <>
+                <TouchableOpacity
+                  onPress={handleLogin}
+                  style={styles.loginButton}>
+                  <Text style={styles.buttonText}>Login</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={forgotPassword}
+                  style={styles.forgotPasswordButton}>
+                  <Text style={styles.forgotPasswordText}>
+                    Forgot Password?
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+          <View style={styles.registerContainer}>
+            <Text style={styles.registerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={navigateToRegister}>
+              <Text style={styles.registerLink}>Register</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   container: {
+    flex: 1,
+  },
+  innerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#ff8c52',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 30,
   },
   inputContainer: {
-    width: '80%',
+    width: '100%',
+    marginBottom: 20,
   },
   input: {
-    backgroundColor: 'black', // Set the background color to black
-    color: 'white', // Change the text color to white for better contrast
+    backgroundColor: '#F5F5F5',
+    color: '#333333',
     paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 5,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    fontSize: 16,
   },
   buttonContainer: {
-    width: '60%',
-    justifyContent: 'center',
+    width: '100%',
     alignItems: 'center',
-    marginTop: 40,
   },
-  button: {
-    backgroundColor: '#0782F9',
+  loginButton: {
+    backgroundColor: '#ff8c52',
     width: '100%',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 15,
   },
-  buttonOutline: {
-    backgroundColor: 'white',
-    marginTop: 5,
-    borderColor: '#0782F9',
-    borderWidth: 2,
-  },
-  buttonOutlineText: {
-    color: '#0782F9',
-    fontWeight: '700',
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
     fontSize: 16,
+  },
+  forgotPasswordButton: {
+    padding: 10,
+  },
+  forgotPasswordText: {
+    color: '#ff8c52',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  registerText: {
+    color: '#666666',
+    fontSize: 14,
+  },
+  registerLink: {
+    color: '#ff8c52',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
-
-
-export default Signup;
+export default Login;

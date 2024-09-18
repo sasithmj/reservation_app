@@ -1,5 +1,5 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import SigninWelcomeScreen from '../Screens/authScreens/SigninWelcomeScreen';
 import HomeScreen from '../Screens/HomeScreen';
 import HomeMap from '../Components/Homemap';
@@ -15,134 +15,131 @@ import PaymentView from '../Components/BookSeats/PaymentView';
 import Lost from '../imagePicker/Lost';
 import HomeSearch from '../Components/HomeSearch/HomeSearch';
 
-
-
 const Auth = createNativeStackNavigator();
 
 export default function AuthStack() {
-    return (
-        <Auth.Navigator>
-            <Auth.Screen
-                name="SigninWelcomeScreen"
-                component={SigninWelcomeScreen}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                    //...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-            <Auth.Screen
-                name="SigninScreen"
-                component={Signup}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-            <Auth.Screen
-                name="HomeScreen"
-                component={HomeScreen}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-        <Auth.Screen
-                name="indexScreen"
-                component={SearchResults}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-
-     <Auth.Screen
-                name="DestinationSearch"
-                component={DestinationSearch}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-             <Auth.Screen
-                name="Registration"
-                component={Registration}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-             <Auth.Screen
-                name="newLost"
-                component={NewLost}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
+  return (
+    <Auth.Navigator>
       <Auth.Screen
-                name="BookSeats"
-                component={BookSeats}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
+        name="SigninWelcomeScreen"
+        component={SigninWelcomeScreen}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="SigninScreen"
+        component={Signup}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="HomeScreen"
+        component={HomeScreen}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="indexScreen"
+        component={SearchResults}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
 
-    <Auth.Screen
-                name="BookRegistration"
-                component={BookRegitration}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-              <Auth.Screen
-                name="PaymentScreen"
-                component={PaymentScreen}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-              <Auth.Screen
-                name="PaymentView"
-                component={PaymentView}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
-             <Auth.Screen
-                name="HomeSearch"
-                component={HomeSearch}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
+      <Auth.Screen
+        name="DestinationSearch"
+        component={DestinationSearch}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="Registration"
+        component={Registration}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="newLost"
+        component={NewLost}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="BookSeats"
+        component={BookSeats}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
 
-<Auth.Screen
-                name="SearchResults"
-                component={SearchResults}
-                options={{
-                    headerShown: false,
-                    // Using FadeFromBottomAndroid for Android
-                  //  ...TransitionPresets.FadeFromBottomAndroid
-                }}
-            />
+      <Auth.Screen
+        name="BookRegistration"
+        component={BookRegitration}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="PaymentScreen"
+        component={PaymentScreen}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="PaymentView"
+        component={PaymentView}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+      <Auth.Screen
+        name="HomeSearch"
+        component={HomeSearch}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
 
-        </Auth.Navigator>
-    );
+      <Auth.Screen
+        name="SearchResults"
+        component={SearchResults}
+        options={{
+          headerShown: false,
+          // Using FadeFromBottomAndroid for Android
+          //  ...TransitionPresets.FadeFromBottomAndroid
+        }}
+      />
+    </Auth.Navigator>
+  );
 }
